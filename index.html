@@ -91,7 +91,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>QUAMPER | Luxury Official Store</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Montserrat:wght@300;400;600;800&family=Playfair+Display:ital,wght@1,900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Montserrat:wght@300;400;600;800&family=Playfair+Display:ital,wght=1,900&display=swap" rel="stylesheet">
     <style>
         :root { --gold-grad: linear-gradient(45deg, #BF953F, #FCF6BA, #B38728); --gold: #D4AF37; --dark: #000; --card: rgba(10, 10, 10, 0.8); }
         /* ====== AI FLOATING CHAT WIDGET ====== */
@@ -545,8 +545,8 @@
         .acc-menu-item .menu-text { color: #eee; font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
         .acc-menu-item .menu-arrow { color: var(--gold); font-size: 16px; font-weight: 900; }
         
-        .support-card { background: rgba(15,15,15,0.8); border: 1px solid rgba(212,175,55,0.2); border-radius: 12px; padding: 25px 20px; text-align: center; margin-bottom: 15px; }
-        .support-icon { width: 50px; height: 50px; background: rgba(212,175,55,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; color: var(--gold); font-size: 24px; }
+        .support-card { background: rgba(15,15,15,0.8); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 12px; padding: 25px 20px; text-align: center; margin-bottom: 15px; }
+        .support-icon { width: 50px; height: 50px; background: rgba(212, 175, 55, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; color: var(--gold); font-size: 24px; }
         .support-title { color: #fff; font-family: 'Cinzel', serif; font-size: 18px; margin-bottom: 8px; letter-spacing: 2px; }
         .support-desc { color: #aaa; font-size: 12px; line-height: 1.6; margin-bottom: 20px; }
 
@@ -1290,7 +1290,6 @@
 <div id="pfpPickerOverlay">
     <div class="pfp-picker-box">
         <div class="pfp-picker-title">CHOOSE YOUR AVATAR</div>
-        <div class="pfp-section-label">👨 Male</div>
         <div class="pfp-grid" id="malePfpGrid"></div>
         <div class="pfp-section-label">👩 Female</div>
         <div class="pfp-grid" id="femalePfpGrid"></div>
@@ -1506,7 +1505,7 @@ function showLoggedOutState() {
         });
     }
 
-    // ====== ACCOUNT CREATE (WITH EMAIL VERIFICATION) ======
+// ====== ACCOUNT CREATE (WITHOUT EMAIL VERIFICATION) ======
 function doRegister() {
     const name = document.getElementById('regName').value.trim();
     const email = document.getElementById('regEmail').value.trim();
@@ -1519,9 +1518,6 @@ function doRegister() {
     auth.createUserWithEmailAndPassword(email, pass)
     .then((cred) => {
         const createdUid = cred.user.uid;
-        
-        // Firebase Verification Email Bhejega
-        cred.user.sendEmailVerification();
 
         return db.ref('users/' + createdUid).set({
             uid: createdUid,
@@ -1532,9 +1528,13 @@ function doRegister() {
             pfp: malePfps[0],
             createdAt: new Date().toLocaleString()
         }).then(() => {
-            showPremiumAlert('Account Created! Please check your Email to Verify.');
-            auth.signOut(); // Account bante hi bahar nikal do
-            switchAuthTab('login'); // Wapas login page par bhej do
+            showPremiumAlert('Account Created Successfully! ✓');
+            closeAuthOverlay();
+            switchTab('account');
+            document.querySelectorAll('.nav-item').forEach((item, i) => {
+                item.classList.remove('active');
+                if (i === 2) item.classList.add('active'); 
+            });
         });
     })
     .catch((err) => {
@@ -1542,7 +1542,7 @@ function doRegister() {
     });
 }
 
-// ====== ACCOUNT LOGIN (CHECK VERIFICATION) ======
+// ====== ACCOUNT LOGIN (WITHOUT VERIFICATION CHECK) ======
 function doLogin() {
     const email = document.getElementById('loginEmail').value.trim();
     const pass = document.getElementById('loginPass').value;
@@ -1552,13 +1552,6 @@ function doLogin() {
 
     auth.signInWithEmailAndPassword(email, pass)
     .then((cred) => {
-        // Check karo ki email verify hui ya nahi
-        if (!cred.user.emailVerified) {
-            showPremiumAlert('Email not verified! Please check your inbox and click the link.');
-            auth.signOut(); 
-            return;
-        }
-
         db.ref('users/' + cred.user.uid).once('value').then(snap => {
             const data = snap.val() || {};
             
@@ -1990,295 +1983,6 @@ function doLogin() {
         document.getElementById('reviewOverlay').style.display = 'none';
         document.getElementById('modalOverlay').style.display = 'block';
         resetReviewForm();
-    }
-
-    function loadReviewsForProduct(pId) {
-        const content = document.getElementById('reviewContent');
-        content.innerHTML = `<div class="review-header">CUSTOMER EXPERIENCES</div>
-            <button class="add-review-trigger" onclick="toggleAddReviewForm()">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--gold)"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-                Share Your Experience
-            </button>
-            <div id="addReviewForm">
-                <div class="star-rating-input" id="starInput">
-                    <span onclick="setRatingInput(1)">★</span><span onclick="setRatingInput(2)">★</span><span onclick="setRatingInput(3)">★</span><span onclick="setRatingInput(4)">★</span><span onclick="setRatingInput(5)">★</span>
-                </div>
-                <input type="text" id="reviewName" class="premium-input" placeholder="Your Name">
-                <textarea id="reviewText" class="premium-textarea" placeholder="Your thoughts..."></textarea>
-                <label for="reviewFile" class="file-input-label" id="fileLabel">Add Photos</label>
-                <input type="file" id="reviewFile" style="display:none;" accept="image/*" multiple onchange="handleReviewImages(this)">
-                <div id="previewImages" class="review-image-container"></div>
-                <button class="review-submit-btn" onclick="submitPremiumReview('${pId}')">Publish Review</button>
-            </div>
-            <div id="reviewsListContainer"></div>`;
-
-        db.ref(`reviews/${pId}`).on('value', (snap) => {
-            const list = document.getElementById('reviewsListContainer');
-            if(!snap.exists()) {
-                list.innerHTML = `<div style="text-align:center; color:#555; padding:40px;">No reviews yet.</div>`;
-                return;
-            }
-            let html = "";
-            snap.forEach(child => {
-                const r = child.val();
-                let imgH = r.images ? r.images.map(i => `<img src="${i}" class="review-image-premium" loading="lazy">`).join('') : '';
-                html += `
-                    <div class="review-card-premium">
-                        <div class="review-user-line">
-                            <div class="review-user-name">${r.name}</div>
-                            <div class="review-stars-line">${getStars(r.rating)}</div>
-                        </div>
-                        <p class="review-text-premium">${r.text}</p>
-                        <div class="review-image-container">${imgH}</div>
-                    </div>`;
-            });
-            list.innerHTML = html;
-        });
-    }
-
-    function toggleAddReviewForm() {
-        const f = document.getElementById('addReviewForm');
-        f.style.display = f.style.display === 'block' ? 'none' : 'block';
-    }
-
-    function setRatingInput(r) {
-        currentRatingInput = r;
-        document.querySelectorAll('#starInput span').forEach((s, i) => { i < r ? s.classList.add('active') : s.classList.remove('active'); });
-    }
-
-    function handleReviewImages(input) {
-        base64ImageData = [];
-        const preview = document.getElementById('previewImages');
-        preview.innerHTML = '';
-        if (input.files) {
-            Array.from(input.files).forEach(file => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    base64ImageData.push(e.target.result);
-                    preview.innerHTML += `<img src="${e.target.result}" style="width:50px; height:50px; object-fit:cover; border-radius:6px;">`;
-                };
-                reader.readAsDataURL(file);
-            });
-        }
-    }
-
-    function resetReviewForm() {
-        currentRatingInput = 0; base64ImageData = [];
-    }
-
-    function submitPremiumReview(pId) {
-        const name = document.getElementById('reviewName').value;
-        const text = document.getElementById('reviewText').value;
-        if(currentRatingInput === 0 || !name || !text) return showPremiumAlert("Complete the form!");
-        db.ref(`reviews/${pId}`).push({ name, rating: currentRatingInput, text, images: base64ImageData, date: new Date().toLocaleDateString() })
-        .then(() => {
-            const p = allProducts[pId];
-            const nC = (parseInt(p.reviewCount) || 0) + 1;
-            const nR = (((parseFloat(p.rating) || 5) * (nC-1)) + currentRatingInput) / nC;
-            db.ref(`products/${pId}`).update({ reviewCount: nC, rating: nR.toFixed(1) });
-            showPremiumAlert("Review published!");
-            resetReviewForm();
-        });
-    }
-
-    function addToBag() {
-        const existing = cart.find(i => i.id === window.curP.id);
-        if(existing) {
-            existing.qty += 1;
-        } else {
-            cart.push({...window.curP, qty: 1, cartId: Date.now()});
-        }
-        updateCartUI();
-        showPremiumAlert("Added to Cart");
-        closeM();
-    }
-
-    function directBuy() {
-        const user = auth.currentUser;
-        if (!user) {
-            closeM();
-            showPremiumAlert('Please Sign In to Buy!');
-            setTimeout(() => {
-                openAuthOverlay('login');
-            }, 400);
-            return;
-        }
-        cart = [{...window.curP, qty: 1, cartId: Date.now()}];
-        updateCartUI();
-        showShipping();
-    }
-
-    function updateCartUI() {
-        const count = cart.reduce((acc, i) => acc + i.qty, 0);
-        document.getElementById('cart-count').innerText = count;
-    }
-
-    function changeQty(id, delta) {
-        const item = cart.find(i => i.cartId === id);
-        if(item) {
-            item.qty += delta;
-            if(item.qty <= 0) cart = cart.filter(i => i.cartId !== id);
-        }
-        updateCartUI();
-        if(cart.length === 0) closeM(); else openCartView();
-    }
-
-    function openCartView() {
-        currentOpenProductId = null; 
-        if(cart.length === 0) return showPremiumAlert("Cart is Empty");
-        
-        let subtotalOriginal = 0, subtotalFinal = 0;
-        const totalItemsInCart = cart.reduce((acc, i) => acc + i.qty, 0);
-
-        const itemsHtml = cart.map((item, index) => {
-            const op = parseFloat(item.price) || 0;
-            const dp = parseFloat(item.discountPrice) || 0;
-            const fp = (dp > 0 && dp < op) ? dp : op;
-            subtotalOriginal += op * item.qty;
-            subtotalFinal += fp * item.qty;
-            
-            const imgSrc = extractFirstImage(item.img);
-            
-            return `<div style="display:flex; align-items:center; gap:12px; background:rgba(20,20,20,0.6); border:1px solid rgba(255,255,255,0.1); padding:10px; border-radius:10px; margin-bottom:15px;">
-                <div style="font-size:12px; font-weight:800; color:var(--gold); min-width:20px;">${index + 1}.</div>
-                <img src="${imgSrc}" onerror="this.src='https://via.placeholder.com/40/111111/FFFFFF?text=Item';" style="width:40px; height:40px; object-fit:contain; border-radius:6px;">
-                <div style="flex:1;">
-                    <div style="font-size:11px; color:var(--gold); font-weight:600;">${item.name}</div>
-                    <div style="font-size:13px; font-weight:800;">₹${fp}</div>
-                </div>
-                <div style="display:flex; align-items:center; gap:6px;">
-                    <button class="qty-btn" style="width:20px; height:20px; font-size:12px;" onclick="changeQty(${item.cartId}, -1)">-</button>
-                    <span class="qty-val" style="font-size:12px; min-width:15px;">${item.qty}</span>
-                    <button class="qty-btn" style="width:20px; height:20px; font-size:12px;" onclick="changeQty(${item.cartId}, 1)">+</button>
-                </div>
-            </div>`;
-        }).join('');
-
-        const offAmt = subtotalOriginal - subtotalFinal;
-        const delivery = subtotalFinal >= 499 ? 0 : 50;
-        const gstAmt = Math.round(subtotalFinal * 0.18);
-        const totalPayable = subtotalFinal + delivery;
-
-        document.body.style.overflow = 'hidden';
-        document.getElementById('modalOverlay').style.display = 'block';
-        document.getElementById('modalContent').innerHTML = `
-            <div style="padding:15px 0 10px; text-align:center;"><h2 class="cart-header-title">PERFUME CART</h2></div>
-            <div class="cart-items-container">
-                <div style="margin-top: 5px; margin-bottom:10px;">${itemsHtml}</div>
-            </div>
-            <div id="billSection" class="checkout-box-container">
-                <div class="bill-card">
-                    <div class="bill-row"><span>Items (${totalItemsInCart})</span><span>₹${subtotalOriginal}</span></div>
-                    <div class="bill-row" style="color:#2ecc71;"><span>Discount</span><span>- ₹${offAmt}</span></div>
-                    <div class="bill-row"><span>GST (18% Inc.)</span><span>₹${gstAmt}</span></div>
-                    <div class="bill-row"><span>Shipping</span><span>${delivery === 0 ? 'FREE' : '₹'+delivery}</span></div>
-                    <div class="bill-row bill-total" style="font-size: 14px;"><span>Total Amount</span><span>₹${totalPayable}</span></div>
-                </div>
-                <div class="checkout-action-row">
-                    <div class="quamper-official-brand"><span>QUAMPER</span><span>OFFICIAL STORE</span></div>
-                    <button class="checkout-rect-btn" onclick="showShipping()">CHECKOUT NOW</button>
-                </div>
-            </div>`;
-    }
-
-    function setDeliveryType(type) {
-        selectedDeliveryType = type;
-        const homeBtn = document.getElementById('typeHome');
-        const workBtn = document.getElementById('typeWork');
-        if(type === 'Home') {
-            homeBtn.style.background = 'rgba(212,175,55,0.15)';
-            homeBtn.style.borderColor = 'var(--gold)';
-            homeBtn.style.color = '#fff';
-            workBtn.style.background = 'transparent';
-            workBtn.style.borderColor = 'rgba(255,255,255,0.15)';
-            workBtn.style.color = '#888';
-        } else {
-            workBtn.style.background = 'rgba(212,175,55,0.15)';
-            workBtn.style.borderColor = 'var(--gold)';
-            workBtn.style.color = '#fff';
-            homeBtn.style.background = 'transparent';
-            homeBtn.style.borderColor = 'rgba(255,255,255,0.15)';
-            homeBtn.style.color = '#888';
-        }
-    }
-
-    function resetPinVerify() {
-        const btn = document.getElementById('verifyPinBtn');
-        if (btn && btn.innerText !== "VERIFY") {
-            btn.innerText = "VERIFY";
-            btn.style.background = "var(--gold-grad)";
-            btn.style.color = "#000";
-            btn.style.border = "none";
-            btn.disabled = false;
-            document.getElementById('cCity').value = "";
-            document.getElementById('cState').value = "";
-            document.getElementById('cCity').style.borderBottomStyle = "dashed";
-            document.getElementById('cState').style.borderBottomStyle = "dashed";
-            document.getElementById('cCity').style.borderBottomColor = "rgba(255,255,255,0.2)";
-            document.getElementById('cState').style.borderBottomColor = "rgba(255,255,255,0.2)";
-            document.getElementById('cCity').setAttribute('readonly', 'true');
-            document.getElementById('cState').setAttribute('readonly', 'true');
-        }
-    }
-
-    function verifyPincode() {
-        const pin = document.getElementById('cPincode').value.trim();
-        const btn = document.getElementById('verifyPinBtn');
-        
-        if(!pin || pin.length !== 6 || isNaN(pin)) {
-            return showPremiumAlert("Enter valid 6-Digit Pincode!");
-        }
-        
-        btn.innerText = "WAIT...";
-        btn.style.opacity = "0.7";
-
-        fetch(`https://api.postalpincode.in/pincode/${pin}`)
-        .then(res => res.json())
-        .then(data => {
-            if(data && data[0] && data[0].Status === "Success") {
-                const details = data[0].PostOffice[0];
-                handlePinSuccess(details.District || details.Block || details.Name, details.State, btn);
-            } else {
-                throw new Error("Postal API Failed");
-            }
-        })
-        .catch(() => {
-            fetch(`https://api.zippopotam.us/in/${pin}`)
-            .then(res => {
-                if(!res.ok) throw new Error("Invalid");
-                return res.json();
-            })
-            .then(data => {
-                if(data && data.places && data.places.length > 0) {
-                    const details = data.places[0];
-                    handlePinSuccess(details['place name'], details['state'], btn);
-                } else {
-                    throw new Error("Invalid");
-                }
-            })
-            .catch(() => {
-                handlePinError(btn);
-            });
-        });
-    }
-
-    function handlePinSuccess(city, state, btn) {
-        document.getElementById('cCity').value = city;
-        document.getElementById('cState').value = state;
-        
-        document.getElementById('cCity').style.borderBottomStyle = 'solid';
-        document.getElementById('cCity').style.borderBottomColor = 'var(--gold)';
-        document.getElementById('cState').style.borderBottomStyle = 'solid';
-        document.getElementById('cState').style.borderBottomColor = 'var(--gold)';
-        
-        btn.innerText = "VERIFIED ✓";
-        btn.style.background = "rgba(46, 204, 113, 0.15)";
-        btn.style.color = "#2ecc71";
-        btn.style.border = "1px solid #2ecc71";
-        btn.style.opacity = "1";
-        btn.disabled = true;
-        
-        showPremiumAlert("Pincode Verified Successfully!");
     }
 
     function handlePinError(btn) {
